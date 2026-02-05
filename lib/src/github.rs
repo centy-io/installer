@@ -14,6 +14,14 @@ pub struct ReleaseInfo {
 /// Resolve the version tag to use. If `version` is None, fetch the latest release
 /// (including pre-releases) from the GitHub API.
 pub fn resolve_version(client: &Client, version: Option<&str>) -> Result<String, String> {
+    resolve_version_from(client, version, "https://api.github.com")
+}
+
+pub(crate) fn resolve_version_from(
+    client: &Client,
+    version: Option<&str>,
+    api_base: &str,
+) -> Result<String, String> {
     if let Some(v) = version {
         let tag = if v.starts_with('v') {
             v.to_string()
@@ -24,7 +32,7 @@ pub fn resolve_version(client: &Client, version: Option<&str>) -> Result<String,
     }
 
     // Fetch all releases and pick the first one (most recent, includes pre-releases)
-    let url = format!("https://api.github.com/repos/{REPO}/releases");
+    let url = format!("{api_base}/repos/{REPO}/releases");
     let resp = client
         .get(&url)
         .header("User-Agent", "centy-installer")
@@ -102,10 +110,47 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
     }
 
     #[test]
+    fn parse_checksum_second_entry() {
+        let checksums = "\
+abc123  centy-daemon-0.1.0-aarch64-apple-darwin.tar.gz
+def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
+";
+        let hash = parse_checksum(
+            checksums,
+            "centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz",
+        )
+        .unwrap();
+        assert_eq!(hash, "def456");
+    }
+
+    #[test]
+    fn parse_checksum_single_space_separator() {
+        let checksums = "abc123 my-asset.tar.gz\n";
+        let hash = parse_checksum(checksums, "my-asset.tar.gz").unwrap();
+        assert_eq!(hash, "abc123");
+    }
+
+    #[test]
     fn parse_checksum_not_found() {
         let checksums = "abc123  other-file.tar.gz\n";
         let result = parse_checksum(checksums, "missing.tar.gz");
         assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("checksum not found for missing.tar.gz"));
+    }
+
+    #[test]
+    fn parse_checksum_empty_input() {
+        let result = parse_checksum("", "anything.tar.gz");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn parse_checksum_blank_lines() {
+        let checksums = "\n\nabc123  target.tar.gz\n\n";
+        let hash = parse_checksum(checksums, "target.tar.gz").unwrap();
+        assert_eq!(hash, "abc123");
     }
 
     #[test]
@@ -127,6 +172,37 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
             info.checksums_url,
             "https://github.com/centy-io/centy-daemon/releases/download/v0.2.0/checksums-sha256.txt"
         );
+        assert_eq!(info.tag, "v0.2.0");
+    }
+
+    #[test]
+    fn release_info_tag_without_v_prefix() {
+        let platform = Platform {
+            target: "x86_64-unknown-linux-gnu",
+            archive_ext: ".tar.gz",
+        };
+        let info = release_info("1.0.0", &platform);
+        assert_eq!(
+            info.asset_name,
+            "centy-daemon-1.0.0-x86_64-unknown-linux-gnu.tar.gz"
+        );
+        assert_eq!(
+            info.asset_url,
+            "https://github.com/centy-io/centy-daemon/releases/download/1.0.0/centy-daemon-1.0.0-x86_64-unknown-linux-gnu.tar.gz"
+        );
+    }
+
+    #[test]
+    fn release_info_windows_zip() {
+        let platform = Platform {
+            target: "x86_64-pc-windows-msvc",
+            archive_ext: ".zip",
+        };
+        let info = release_info("v0.3.0", &platform);
+        assert_eq!(
+            info.asset_name,
+            "centy-daemon-0.3.0-x86_64-pc-windows-msvc.zip"
+        );
     }
 
     #[test]
@@ -141,5 +217,96 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
         let client = Client::new();
         let tag = resolve_version(&client, Some("1.0.0")).unwrap();
         assert_eq!(tag, "v1.0.0");
+    }
+
+    #[test]
+    fn resolve_version_none_fetches_latest() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"tag_name": "v0.5.0"}, {"tag_name": "v0.4.0"}]"#)
+            .create();
+
+        let client = Client::new();
+        let tag = resolve_version_from(&client, None, &server.url()).unwrap();
+        assert_eq!(tag, "v0.5.0");
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_none_api_error() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(403)
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("GitHub API returned 403"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_none_invalid_json() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_body("not-json")
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("failed to parse releases JSON"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_none_empty_releases() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body("[]")
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("no releases found"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_none_missing_tag_name() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"name": "Release 1"}]"#)
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("no releases found"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_from_with_version_ignores_api_base() {
+        // When a version is provided, the API base is never used
+        let client = Client::new();
+        let tag =
+            resolve_version_from(&client, Some("2.0.0"), "http://invalid-url.example.com")
+                .unwrap();
+        assert_eq!(tag, "v2.0.0");
     }
 }

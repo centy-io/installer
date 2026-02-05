@@ -89,6 +89,28 @@ mod tests {
     }
 
     #[test]
+    fn extract_tar_gz_finds_binary_in_subdirectory() {
+        let mut tar_builder = tar::Builder::new(Vec::new());
+        let content = b"nested-binary";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(content.len() as u64);
+        header.set_mode(0o755);
+        header.set_cksum();
+        tar_builder
+            .append_data(&mut header, "subdir/centy-daemon", &content[..])
+            .unwrap();
+        let tar_bytes = tar_builder.into_inner().unwrap();
+
+        let mut encoder =
+            flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(&tar_bytes).unwrap();
+        let gz_bytes = encoder.finish().unwrap();
+
+        let result = extract_tar_gz(&gz_bytes).unwrap();
+        assert_eq!(result, b"nested-binary");
+    }
+
+    #[test]
     fn extract_tar_gz_missing_binary() {
         let mut tar_builder = tar::Builder::new(Vec::new());
         let content = b"other";
@@ -108,5 +130,103 @@ mod tests {
 
         let result = extract_tar_gz(&gz_bytes);
         assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not found in tar.gz archive"));
+    }
+
+    #[test]
+    fn extract_tar_gz_invalid_data() {
+        let result = extract_tar_gz(b"not-a-valid-archive");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn extract_tar_gz_skips_non_matching_entries() {
+        let mut tar_builder = tar::Builder::new(Vec::new());
+
+        // Add a non-matching file first
+        let other = b"other-content";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(other.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        tar_builder
+            .append_data(&mut header, "readme.txt", &other[..])
+            .unwrap();
+
+        // Then add the target binary
+        let binary = b"the-binary";
+        let mut header = tar::Header::new_gnu();
+        header.set_size(binary.len() as u64);
+        header.set_mode(0o755);
+        header.set_cksum();
+        tar_builder
+            .append_data(&mut header, "centy-daemon", &binary[..])
+            .unwrap();
+
+        let tar_bytes = tar_builder.into_inner().unwrap();
+        let mut encoder =
+            flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+        encoder.write_all(&tar_bytes).unwrap();
+        let gz_bytes = encoder.finish().unwrap();
+
+        let result = extract_tar_gz(&gz_bytes).unwrap();
+        assert_eq!(result, b"the-binary");
+    }
+
+    fn create_zip_with_file(name: &str, content: &[u8]) -> Vec<u8> {
+        let buf = Cursor::new(Vec::new());
+        let mut zip = zip::ZipWriter::new(buf);
+        let options = zip::write::SimpleFileOptions::default();
+        zip.start_file(name, options).unwrap();
+        zip.write_all(content).unwrap();
+        zip.finish().unwrap().into_inner()
+    }
+
+    #[test]
+    fn extract_zip_finds_binary() {
+        let zip_bytes = create_zip_with_file("centy-daemon", b"zip-binary-content");
+        let result = extract_zip(&zip_bytes).unwrap();
+        assert_eq!(result, b"zip-binary-content");
+    }
+
+    #[test]
+    fn extract_zip_finds_exe_binary() {
+        let zip_bytes = create_zip_with_file("centy-daemon.exe", b"exe-binary-content");
+        let result = extract_zip(&zip_bytes).unwrap();
+        assert_eq!(result, b"exe-binary-content");
+    }
+
+    #[test]
+    fn extract_zip_missing_binary() {
+        let zip_bytes = create_zip_with_file("other-file.txt", b"not the binary");
+        let result = extract_zip(&zip_bytes);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not found in zip archive"));
+    }
+
+    #[test]
+    fn extract_zip_invalid_data() {
+        let result = extract_zip(b"not-a-valid-zip");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("failed to open zip archive"));
+    }
+
+    #[test]
+    fn extract_zip_skips_non_matching_entries() {
+        let buf = Cursor::new(Vec::new());
+        let mut zip = zip::ZipWriter::new(buf);
+        let options = zip::write::SimpleFileOptions::default();
+
+        // Add a non-matching file first
+        zip.start_file("readme.txt", options).unwrap();
+        zip.write_all(b"readme content").unwrap();
+
+        // Then add the target binary
+        zip.start_file("centy-daemon", options).unwrap();
+        zip.write_all(b"the-binary").unwrap();
+
+        let zip_bytes = zip.finish().unwrap().into_inner();
+        let result = extract_zip(&zip_bytes).unwrap();
+        assert_eq!(result, b"the-binary");
     }
 }
