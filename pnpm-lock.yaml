@@ -15,6 +15,18 @@ importers:
         specifier: ^9
         version: 9.1.7
 
+  shells/npm/centy: {}
+
+  shells/npm/centy-darwin-arm64: {}
+
+  shells/npm/centy-darwin-x64: {}
+
+  shells/npm/centy-linux-arm64: {}
+
+  shells/npm/centy-linux-x64: {}
+
+  shells/npm/centy-win32-x64: {}
+
 packages:
 
   '@cspell/cspell-bundled-dicts@8.19.4':

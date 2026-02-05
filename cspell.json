@@ -19,7 +19,12 @@
     "useradd",
     "dtolnay",
     "nonexistent",
-    "hashfiles"
+    "hashfiles",
+    "spawnSync",
+    "darwin",
+    "aarch",
+    "npmrc",
+    "execFileSync"
   ],
   "ignorePaths": [
     "node_modules",

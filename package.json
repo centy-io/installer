@@ -6,6 +6,9 @@
   },
   "scripts": {
     "prepare": "husky",
-    "spellcheck": "cspell lint --no-progress '**'"
+    "spellcheck": "cspell lint --no-progress '**'",
+    "version:set": "node scripts/set-version.js",
+    "build:npm": "node scripts/build-npm.js",
+    "publish:npm": "node scripts/publish-npm.js"
   }
 }

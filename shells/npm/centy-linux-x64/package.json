@@ -1,0 +1,15 @@
+{
+  "name": "@centy-io/centy-linux-x64",
+  "version": "0.1.0",
+  "description": "centy-installer binary for Linux x64",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/centy-io/installer",
+    "directory": "shells/npm/centy-linux-x64"
+  },
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "files": ["bin/"],
+  "preferUnplugged": true
+}

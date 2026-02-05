@@ -8,6 +8,10 @@ repository = "https://github.com/centy-io/installer"
 keywords = ["installer", "daemon", "cli"]
 categories = ["command-line-utilities"]
 
+[[bin]]
+name = "centy-installer"
+path = "src/main.rs"
+
 [dependencies]
 reqwest = { version = "0.12", features = ["blocking"] }
 sha2 = "0.10"

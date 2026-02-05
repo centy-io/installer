@@ -1,0 +1,15 @@
+{
+  "name": "@centy-io/centy-darwin-x64",
+  "version": "0.1.0",
+  "description": "centy-installer binary for macOS x64",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/centy-io/installer",
+    "directory": "shells/npm/centy-darwin-x64"
+  },
+  "os": ["darwin"],
+  "cpu": ["x64"],
+  "files": ["bin/"],
+  "preferUnplugged": true
+}
