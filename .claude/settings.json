@@ -193,7 +193,8 @@
       "Bash(node -e:*)",
       "Bash(npm pack:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:unpkg.com)"
+      "WebFetch(domain:unpkg.com)",
+      "Bash(node:*)"
     ]
   },
   "hooks": {
