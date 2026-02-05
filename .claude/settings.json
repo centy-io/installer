@@ -185,7 +185,8 @@
       "Bash(gh pr edit:*)",
       "Bash(gh release list:*)",
       "Bash(gh release view:*)",
-      "Bash(gh release download:*)"
+      "Bash(gh release download:*)",
+      "Bash(tar:*)"
     ]
   },
   "hooks": {
