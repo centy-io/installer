@@ -62,9 +62,8 @@ pub(crate) fn resolve_version_from(
 
 /// Build release info (download URLs) for the given version tag and platform.
 pub fn release_info(tag: &str, platform: &Platform) -> ReleaseInfo {
-    let version_num = tag.strip_prefix('v').unwrap_or(tag);
     let asset_name = format!(
-        "centy-daemon-{version_num}-{}{}",
+        "centy-daemon-{tag}-{}{}",
         platform.target, platform.archive_ext
     );
     let base = format!("https://github.com/{REPO}/releases/download/{tag}");
@@ -162,11 +161,11 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
         let info = release_info("v0.2.0", &platform);
         assert_eq!(
             info.asset_name,
-            "centy-daemon-0.2.0-aarch64-apple-darwin.tar.gz"
+            "centy-daemon-v0.2.0-aarch64-apple-darwin.tar.gz"
         );
         assert_eq!(
             info.asset_url,
-            "https://github.com/centy-io/centy-daemon/releases/download/v0.2.0/centy-daemon-0.2.0-aarch64-apple-darwin.tar.gz"
+            "https://github.com/centy-io/centy-daemon/releases/download/v0.2.0/centy-daemon-v0.2.0-aarch64-apple-darwin.tar.gz"
         );
         assert_eq!(
             info.checksums_url,
@@ -193,6 +192,23 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
     }
 
     #[test]
+    fn release_info_tag_with_v_prefix_preserves_v_in_asset() {
+        let platform = Platform {
+            target: "x86_64-unknown-linux-gnu",
+            archive_ext: ".tar.gz",
+        };
+        let info = release_info("v1.0.0", &platform);
+        assert_eq!(
+            info.asset_name,
+            "centy-daemon-v1.0.0-x86_64-unknown-linux-gnu.tar.gz"
+        );
+        assert_eq!(
+            info.asset_url,
+            "https://github.com/centy-io/centy-daemon/releases/download/v1.0.0/centy-daemon-v1.0.0-x86_64-unknown-linux-gnu.tar.gz"
+        );
+    }
+
+    #[test]
     fn release_info_windows_zip() {
         let platform = Platform {
             target: "x86_64-pc-windows-msvc",
@@ -201,7 +217,7 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
         let info = release_info("v0.3.0", &platform);
         assert_eq!(
             info.asset_name,
-            "centy-daemon-0.3.0-x86_64-pc-windows-msvc.zip"
+            "centy-daemon-v0.3.0-x86_64-pc-windows-msvc.zip"
         );
     }
 
