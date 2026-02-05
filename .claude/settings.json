@@ -191,7 +191,9 @@
       "Bash(yarn install:*)",
       "Bash(chmod:*)",
       "Bash(node -e:*)",
-      "Bash(npm pack:*)"
+      "Bash(npm pack:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:unpkg.com)"
     ]
   },
   "hooks": {
