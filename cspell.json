@@ -10,7 +10,9 @@
     "thiserror",
     "checksums",
     "cksum",
-    "msvc"
+    "msvc",
+    "clippy",
+    "println"
   ],
   "ignorePaths": [
     "node_modules",
