@@ -15,7 +15,7 @@ pub fn download_and_verify(client: &Client, info: &ReleaseInfo) -> Result<Downlo
         .get(&info.checksums_url)
         .header("User-Agent", "centy-installer")
         .send()
-        .and_then(|r| r.text())
+        .and_then(reqwest::blocking::Response::text)
         .map_err(|e| format!("failed to download checksums: {e}"))?;
 
     let expected_hash = crate::github::parse_checksum(&checksums_text, &info.asset_name)?;
@@ -25,7 +25,7 @@ pub fn download_and_verify(client: &Client, info: &ReleaseInfo) -> Result<Downlo
         .get(&info.asset_url)
         .header("User-Agent", "centy-installer")
         .send()
-        .and_then(|r| r.bytes())
+        .and_then(reqwest::blocking::Response::bytes)
         .map_err(|e| format!("failed to download asset: {e}"))?
         .to_vec();
 
@@ -44,6 +44,12 @@ pub fn download_and_verify(client: &Client, info: &ReleaseInfo) -> Result<Downlo
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::significant_drop_tightening
+)]
 mod tests {
     use super::*;
 

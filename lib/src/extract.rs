@@ -44,7 +44,7 @@ pub fn extract_zip(archive_bytes: &[u8]) -> Result<Vec<u8>, String> {
 
         let file_name = file
             .enclosed_name()
-            .and_then(|p| p.file_name().map(|n| n.to_os_string()))
+            .and_then(|p| p.file_name().map(std::ffi::OsStr::to_os_string))
             .and_then(|n| n.into_string().ok())
             .unwrap_or_default();
 
@@ -60,6 +60,7 @@ pub fn extract_zip(archive_bytes: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod tests {
     use super::*;
     use std::io::Write;

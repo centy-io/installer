@@ -1,0 +1,2 @@
+cargo clippy --manifest-path lib/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path lib/Cargo.toml

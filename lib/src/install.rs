@@ -7,7 +7,7 @@ pub fn install_binary(binary_bytes: &[u8]) -> Result<PathBuf, String> {
     install_binary_to(binary_bytes, &home)
 }
 
-pub(crate) fn install_binary_to(binary_bytes: &[u8], home_dir: &Path) -> Result<PathBuf, String> {
+pub fn install_binary_to(binary_bytes: &[u8], home_dir: &Path) -> Result<PathBuf, String> {
     let bin_dir = home_dir.join(".centy").join("bin");
 
     fs::create_dir_all(&bin_dir)
@@ -35,6 +35,7 @@ pub(crate) fn install_binary_to(binary_bytes: &[u8], home_dir: &Path) -> Result<
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod tests {
     use super::*;
 
