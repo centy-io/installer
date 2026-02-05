@@ -1,0 +1,43 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -f e2e/Dockerfile.linux -t centy-e2e-linux .
+
+      - name: Run E2E tests
+        run: docker run --rm centy-e2e-linux
+
+  e2e-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            lib/target
+          key: windows-cargo-${{ hashFiles('lib/Cargo.lock') }}
+          restore-keys: windows-cargo-
+
+      - name: Run E2E tests
+        working-directory: lib
+        run: cargo test --test e2e_install -- --test-threads=1
