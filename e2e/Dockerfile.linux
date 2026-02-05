@@ -1,0 +1,18 @@
+FROM rust:1.84-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m testuser
+
+USER testuser
+WORKDIR /home/testuser/centy-installer
+
+COPY --chown=testuser:testuser lib/ .
+
+RUN cargo build --tests --test e2e_install
+
+CMD ["cargo", "test", "--test", "e2e_install", "--", "--test-threads=1"]

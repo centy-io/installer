@@ -12,7 +12,14 @@
     "cksum",
     "msvc",
     "clippy",
-    "println"
+    "println",
+    "testuser",
+    "bookworm",
+    "libssl",
+    "useradd",
+    "dtolnay",
+    "nonexistent",
+    "hashfiles"
   ],
   "ignorePaths": [
     "node_modules",
