@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "devDependencies": {
+    "cspell": "^8",
+    "husky": "^9"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "spellcheck": "cspell lint --no-progress '**'"
+  }
+}
