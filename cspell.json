@@ -1,0 +1,21 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "centy",
+    "reqwest",
+    "serde",
+    "flate2",
+    "splitn",
+    "thiserror",
+    "checksums",
+    "cksum",
+    "msvc"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    "pnpm-lock.yaml",
+    "target",
+    ".git"
+  ]
+}
