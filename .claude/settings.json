@@ -184,7 +184,8 @@
       "Bash(printf:*)",
       "Bash(gh pr edit:*)",
       "Bash(gh release list:*)",
-      "Bash(gh release view:*)"
+      "Bash(gh release view:*)",
+      "Bash(gh release download:*)"
     ]
   },
   "hooks": {
