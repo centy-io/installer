@@ -186,7 +186,10 @@
       "Bash(gh release list:*)",
       "Bash(gh release view:*)",
       "Bash(gh release download:*)",
-      "Bash(tar:*)"
+      "Bash(tar:*)",
+      "Bash(npx:*)",
+      "Bash(yarn install:*)",
+      "Bash(chmod:*)"
     ]
   },
   "hooks": {
