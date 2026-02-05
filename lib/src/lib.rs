@@ -62,6 +62,7 @@ pub fn install(version: Option<&str>) -> Result<PathBuf, InstallerError> {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod tests {
     use super::*;
 

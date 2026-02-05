@@ -5,6 +5,8 @@ use crate::platform::Platform;
 const REPO: &str = "centy-io/centy-daemon";
 
 pub struct ReleaseInfo {
+    /// Retained for consumers that need the resolved tag (e.g. for display/logging).
+    #[allow(dead_code)]
     pub tag: String,
     pub asset_url: String,
     pub checksums_url: String,
@@ -17,7 +19,7 @@ pub fn resolve_version(client: &Client, version: Option<&str>) -> Result<String,
     resolve_version_from(client, version, "https://api.github.com")
 }
 
-pub(crate) fn resolve_version_from(
+pub fn resolve_version_from(
     client: &Client,
     version: Option<&str>,
     api_base: &str,
@@ -95,6 +97,12 @@ pub fn parse_checksum(checksums_text: &str, asset_name: &str) -> Result<String, 
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::significant_drop_tightening
+)]
 mod tests {
     use super::*;
 
