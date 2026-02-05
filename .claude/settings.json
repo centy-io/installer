@@ -189,7 +189,9 @@
       "Bash(tar:*)",
       "Bash(npx:*)",
       "Bash(yarn install:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(node -e:*)",
+      "Bash(npm pack:*)"
     ]
   },
   "hooks": {
