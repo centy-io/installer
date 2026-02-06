@@ -1,4 +1,4 @@
-name: Publish npm
+name: Publish
 
 on:
   push:
@@ -117,3 +117,32 @@ jobs:
         run: node scripts/publish-npm.js --no-dry-run
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release binaries
+        run: |
+          mkdir -p release
+          cp artifacts/centy-installer-darwin-arm64/centy-installer release/centy-installer-aarch64-apple-darwin
+          cp artifacts/centy-installer-darwin-x64/centy-installer release/centy-installer-x86_64-apple-darwin
+          cp artifacts/centy-installer-linux-arm64/centy-installer release/centy-installer-aarch64-unknown-linux-gnu
+          cp artifacts/centy-installer-linux-x64/centy-installer release/centy-installer-x86_64-unknown-linux-gnu
+          cp artifacts/centy-installer-win32-x64/centy-installer.exe release/centy-installer-x86_64-pc-windows-msvc.exe
+          chmod +x release/centy-installer-*
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
