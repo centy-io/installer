@@ -24,7 +24,8 @@
     "darwin",
     "aarch",
     "npmrc",
-    "execFileSync"
+    "execFileSync",
+    "rustls"
   ],
   "ignorePaths": [
     "node_modules",
