@@ -196,7 +196,9 @@
       "WebFetch(domain:unpkg.com)",
       "Bash(node:*)",
       "Bash(cargo clippy:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(gh secret:*)",
+      "Bash(source:*)"
     ]
   },
   "hooks": {
