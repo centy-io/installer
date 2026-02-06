@@ -195,7 +195,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:unpkg.com)",
       "Bash(node:*)",
-      "Bash(cargo clippy:*)"
+      "Bash(cargo clippy:*)",
+      "Bash(git tag:*)"
     ]
   },
   "hooks": {
