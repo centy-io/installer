@@ -7,8 +7,8 @@ lib/target/
 .env
 
 # Platform binary packages (populated at build time)
-shells/npm/centy-darwin-arm64/bin/
-shells/npm/centy-darwin-x64/bin/
-shells/npm/centy-linux-arm64/bin/
-shells/npm/centy-linux-x64/bin/
-shells/npm/centy-win32-x64/bin/
+shells/npm/centy-installer-darwin-arm64/bin/
+shells/npm/centy-installer-darwin-x64/bin/
+shells/npm/centy-installer-linux-arm64/bin/
+shells/npm/centy-installer-linux-x64/bin/
+shells/npm/centy-installer-win32-x64/bin/

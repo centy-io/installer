@@ -1,0 +1,24 @@
+{
+  "name": "@centy-io/centy-installer",
+  "version": "0.1.0",
+  "description": "Multi-ecosystem installer for the centy-daemon binary",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/centy-io/installer",
+    "directory": "shells/npm/centy-installer"
+  },
+  "bin": {
+    "centy-installer": "bin/centy-installer"
+  },
+  "files": [
+    "bin/centy-installer"
+  ],
+  "optionalDependencies": {
+    "@centy-io/centy-installer-darwin-arm64": "0.1.0",
+    "@centy-io/centy-installer-darwin-x64": "0.1.0",
+    "@centy-io/centy-installer-linux-arm64": "0.1.0",
+    "@centy-io/centy-installer-linux-x64": "0.1.0",
+    "@centy-io/centy-installer-win32-x64": "0.1.0"
+  }
+}

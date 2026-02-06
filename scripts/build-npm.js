@@ -9,27 +9,27 @@ const path = require("path");
 const TARGETS = [
   {
     triple: "aarch64-apple-darwin",
-    pkg: "centy-darwin-arm64",
+    pkg: "centy-installer-darwin-arm64",
     bin: "centy-installer",
   },
   {
     triple: "x86_64-apple-darwin",
-    pkg: "centy-darwin-x64",
+    pkg: "centy-installer-darwin-x64",
     bin: "centy-installer",
   },
   {
     triple: "aarch64-unknown-linux-gnu",
-    pkg: "centy-linux-arm64",
+    pkg: "centy-installer-linux-arm64",
     bin: "centy-installer",
   },
   {
     triple: "x86_64-unknown-linux-gnu",
-    pkg: "centy-linux-x64",
+    pkg: "centy-installer-linux-x64",
     bin: "centy-installer",
   },
   {
     triple: "x86_64-pc-windows-msvc",
-    pkg: "centy-win32-x64",
+    pkg: "centy-installer-win32-x64",
     bin: "centy-installer.exe",
   },
 ];

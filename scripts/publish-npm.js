@@ -13,11 +13,11 @@ if (dryRun) {
 }
 
 const platformPackages = [
-  "centy-darwin-arm64",
-  "centy-darwin-x64",
-  "centy-linux-arm64",
-  "centy-linux-x64",
-  "centy-win32-x64",
+  "centy-installer-darwin-arm64",
+  "centy-installer-darwin-x64",
+  "centy-installer-linux-arm64",
+  "centy-installer-linux-x64",
+  "centy-installer-win32-x64",
 ];
 
 // Publish platform packages first so the main package can resolve them
@@ -36,15 +36,15 @@ for (const pkg of platformPackages) {
 }
 
 // Publish the main package last
-const mainDir = path.join(npmDir, "centy");
+const mainDir = path.join(npmDir, "centy-installer");
 const mainArgs = ["publish", "--access", "public"];
 if (dryRun) mainArgs.push("--dry-run");
 
-console.log("Publishing @centy-io/centy...");
+console.log("Publishing @centy-io/centy-installer...");
 try {
   execFileSync("npm", mainArgs, { cwd: mainDir, stdio: "inherit" });
 } catch {
-  console.error("Failed to publish @centy-io/centy");
+  console.error("Failed to publish @centy-io/centy-installer");
   process.exit(1);
 }
 

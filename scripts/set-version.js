@@ -14,11 +14,11 @@ if (!version) {
 const npmDir = path.join(__dirname, "..", "shells", "npm");
 
 const platformPackages = [
-  "centy-darwin-arm64",
-  "centy-darwin-x64",
-  "centy-linux-arm64",
-  "centy-linux-x64",
-  "centy-win32-x64",
+  "centy-installer-darwin-arm64",
+  "centy-installer-darwin-x64",
+  "centy-installer-linux-arm64",
+  "centy-installer-linux-x64",
+  "centy-installer-win32-x64",
 ];
 
 // Update each platform package version
@@ -31,11 +31,11 @@ for (const pkg of platformPackages) {
 }
 
 // Update main package version and optionalDependencies
-const mainPkgPath = path.join(npmDir, "centy", "package.json");
+const mainPkgPath = path.join(npmDir, "centy-installer", "package.json");
 const mainJson = JSON.parse(fs.readFileSync(mainPkgPath, "utf8"));
 mainJson.version = version;
 for (const dep of Object.keys(mainJson.optionalDependencies)) {
   mainJson.optionalDependencies[dep] = version;
 }
 fs.writeFileSync(mainPkgPath, JSON.stringify(mainJson, null, 2) + "\n");
-console.log(`Updated @centy-io/centy to ${version}`);
+console.log(`Updated @centy-io/centy-installer to ${version}`);

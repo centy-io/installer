@@ -1,12 +1,12 @@
 {
-  "name": "@centy-io/centy-linux-arm64",
+  "name": "@centy-io/centy-installer-linux-arm64",
   "version": "0.1.0",
   "description": "centy-installer binary for Linux ARM64",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/centy-io/installer",
-    "directory": "shells/npm/centy-linux-arm64"
+    "directory": "shells/npm/centy-installer-linux-arm64"
   },
   "os": ["linux"],
   "cpu": ["arm64"],
