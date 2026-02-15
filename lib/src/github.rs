@@ -4,6 +4,12 @@ use crate::platform::Platform;
 
 const REPO: &str = "centy-io/centy-daemon";
 
+#[derive(Debug)]
+pub struct VersionInfo {
+    pub tag: String,
+    pub notice: Option<String>,
+}
+
 pub struct ReleaseInfo {
     /// Retained for consumers that need the resolved tag (e.g. for display/logging).
     #[allow(dead_code)]
@@ -13,30 +19,78 @@ pub struct ReleaseInfo {
     pub asset_name: String,
 }
 
-/// Resolve the version tag to use. If `version` is None, fetch the latest release
-/// (including pre-releases) from the GitHub API.
-pub fn resolve_version(client: &Client, version: Option<&str>) -> Result<String, String> {
-    resolve_version_from(client, version, "https://api.github.com")
+/// Resolve the version tag to use.
+///
+/// When no `version` is specified:
+/// - `prerelease = false` (default): fetches the latest stable release via `/releases/latest`
+/// - `prerelease = true`: fetches all releases (including pre-releases) and picks the first one
+///
+/// When a stable version is resolved, an additional check is made for a newer pre-release
+/// and a notification is included in the returned `VersionInfo` if one exists.
+pub fn resolve_version(
+    client: &Client,
+    version: Option<&str>,
+    prerelease: bool,
+) -> Result<VersionInfo, String> {
+    resolve_version_from(client, version, prerelease, "https://api.github.com")
 }
 
 pub fn resolve_version_from(
     client: &Client,
     version: Option<&str>,
+    prerelease: bool,
     api_base: &str,
-) -> Result<String, String> {
+) -> Result<VersionInfo, String> {
     if let Some(v) = version {
         let tag = if v.starts_with('v') {
             v.to_string()
         } else {
             format!("v{v}")
         };
-        return Ok(tag);
+        return Ok(VersionInfo { tag, notice: None });
     }
 
-    // Fetch all releases and pick the first one (most recent, includes pre-releases)
-    let url = format!("{api_base}/repos/{REPO}/releases");
+    if prerelease {
+        // Fetch all releases and pick the first one (most recent, includes pre-releases)
+        let url = format!("{api_base}/repos/{REPO}/releases");
+        let tag = fetch_tag_from_releases_array(client, &url)?;
+        return Ok(VersionInfo { tag, notice: None });
+    }
+
+    // Default: fetch the latest stable (non-pre-release) version
+    let url = format!("{api_base}/repos/{REPO}/releases/latest");
     let resp = client
         .get(&url)
+        .header("User-Agent", "centy-installer")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .map_err(|e| format!("failed to fetch latest release: {e}"))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("GitHub API returned {}", resp.status()));
+    }
+
+    let text = resp
+        .text()
+        .map_err(|e| format!("failed to read response body: {e}"))?;
+    let body: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| format!("failed to parse release JSON: {e}"))?;
+
+    let tag = body["tag_name"]
+        .as_str()
+        .ok_or("no stable release found")?
+        .to_string();
+
+    // Check if a newer pre-release is available and notify the user
+    let notice = check_prerelease_notice(client, api_base, &tag);
+
+    Ok(VersionInfo { tag, notice })
+}
+
+/// Fetch the tag name from the first entry of a releases array endpoint.
+fn fetch_tag_from_releases_array(client: &Client, url: &str) -> Result<String, String> {
+    let resp = client
+        .get(url)
         .header("User-Agent", "centy-installer")
         .header("Accept", "application/vnd.github+json")
         .send()
@@ -52,14 +106,40 @@ pub fn resolve_version_from(
     let body: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| format!("failed to parse releases JSON: {e}"))?;
 
-    let tag = body
-        .as_array()
+    body.as_array()
         .and_then(|releases| releases.first())
         .and_then(|r| r["tag_name"].as_str())
-        .ok_or("no releases found")?
-        .to_string();
+        .ok_or_else(|| "no releases found".to_string())
+        .map(String::from)
+}
 
-    Ok(tag)
+/// Check if the most recent release on GitHub is a pre-release newer than the
+/// resolved stable tag, and return a user-facing notice if so.
+fn check_prerelease_notice(client: &Client, api_base: &str, stable_tag: &str) -> Option<String> {
+    let url = format!("{api_base}/repos/{REPO}/releases");
+    let resp = client
+        .get(&url)
+        .header("User-Agent", "centy-installer")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .ok()?;
+
+    if !resp.status().is_success() {
+        return None;
+    }
+
+    let text = resp.text().ok()?;
+    let body: serde_json::Value = serde_json::from_str(&text).ok()?;
+
+    let latest_tag = body.as_array()?.first()?["tag_name"].as_str()?;
+
+    if latest_tag == stable_tag {
+        None
+    } else {
+        Some(format!(
+            "Note: Pre-release {latest_tag} is available. Use --pre to install it."
+        ))
+    }
 }
 
 /// Build release info (download URLs) for the given version tag and platform.
@@ -232,35 +312,102 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
     #[test]
     fn resolve_version_with_v_prefix() {
         let client = Client::new();
-        let tag = resolve_version(&client, Some("v1.0.0")).unwrap();
-        assert_eq!(tag, "v1.0.0");
+        let info = resolve_version(&client, Some("v1.0.0"), false).unwrap();
+        assert_eq!(info.tag, "v1.0.0");
+        assert!(info.notice.is_none());
     }
 
     #[test]
     fn resolve_version_without_v_prefix() {
         let client = Client::new();
-        let tag = resolve_version(&client, Some("1.0.0")).unwrap();
-        assert_eq!(tag, "v1.0.0");
+        let info = resolve_version(&client, Some("1.0.0"), false).unwrap();
+        assert_eq!(info.tag, "v1.0.0");
     }
 
     #[test]
-    fn resolve_version_none_fetches_latest() {
+    fn resolve_version_prerelease_fetches_first_release() {
         let mut server = mockito::Server::new();
         let mock = server
             .mock("GET", "/repos/centy-io/centy-daemon/releases")
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(r#"[{"tag_name": "v0.5.0"}, {"tag_name": "v0.4.0"}]"#)
+            .with_body(r#"[{"tag_name": "v0.5.0-alpha.1"}, {"tag_name": "v0.4.0"}]"#)
             .create();
 
         let client = Client::new();
-        let tag = resolve_version_from(&client, None, &server.url()).unwrap();
-        assert_eq!(tag, "v0.5.0");
+        let info = resolve_version_from(&client, None, true, &server.url()).unwrap();
+        assert_eq!(info.tag, "v0.5.0-alpha.1");
+        assert!(info.notice.is_none());
         mock.assert();
     }
 
     #[test]
-    fn resolve_version_none_api_error() {
+    fn resolve_version_stable_uses_latest_endpoint() {
+        let mut server = mockito::Server::new();
+        let latest_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"tag_name": "v0.4.0"}"#)
+            .create();
+        let releases_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"tag_name": "v0.4.0"}]"#)
+            .create();
+
+        let client = Client::new();
+        let info = resolve_version_from(&client, None, false, &server.url()).unwrap();
+        assert_eq!(info.tag, "v0.4.0");
+        assert!(info.notice.is_none());
+        latest_mock.assert();
+        releases_mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_stable_notifies_about_prerelease() {
+        let mut server = mockito::Server::new();
+        let latest_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"tag_name": "v0.4.0"}"#)
+            .create();
+        let releases_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"[{"tag_name": "v0.5.0-alpha.1"}, {"tag_name": "v0.4.0"}]"#)
+            .create();
+
+        let client = Client::new();
+        let info = resolve_version_from(&client, None, false, &server.url()).unwrap();
+        assert_eq!(info.tag, "v0.4.0");
+        let notice = info.notice.unwrap();
+        assert!(notice.contains("v0.5.0-alpha.1"));
+        assert!(notice.contains("--pre"));
+        latest_mock.assert();
+        releases_mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_stable_api_error() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(403)
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, false, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("GitHub API returned 403"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_prerelease_api_error() {
         let mut server = mockito::Server::new();
         let mock = server
             .mock("GET", "/repos/centy-io/centy-daemon/releases")
@@ -268,14 +415,30 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
             .create();
 
         let client = Client::new();
-        let result = resolve_version_from(&client, None, &server.url());
+        let result = resolve_version_from(&client, None, true, &server.url());
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("GitHub API returned 403"));
         mock.assert();
     }
 
     #[test]
-    fn resolve_version_none_invalid_json() {
+    fn resolve_version_stable_invalid_json() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(200)
+            .with_body("not-json")
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, false, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("failed to parse release JSON"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_prerelease_invalid_json() {
         let mut server = mockito::Server::new();
         let mock = server
             .mock("GET", "/repos/centy-io/centy-daemon/releases")
@@ -284,14 +447,14 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
             .create();
 
         let client = Client::new();
-        let result = resolve_version_from(&client, None, &server.url());
+        let result = resolve_version_from(&client, None, true, &server.url());
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("failed to parse releases JSON"));
         mock.assert();
     }
 
     #[test]
-    fn resolve_version_none_empty_releases() {
+    fn resolve_version_prerelease_empty_releases() {
         let mut server = mockito::Server::new();
         let mock = server
             .mock("GET", "/repos/centy-io/centy-daemon/releases")
@@ -301,14 +464,31 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
             .create();
 
         let client = Client::new();
-        let result = resolve_version_from(&client, None, &server.url());
+        let result = resolve_version_from(&client, None, true, &server.url());
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("no releases found"));
         mock.assert();
     }
 
     #[test]
-    fn resolve_version_none_missing_tag_name() {
+    fn resolve_version_stable_missing_tag_name() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"name": "Release 1"}"#)
+            .create();
+
+        let client = Client::new();
+        let result = resolve_version_from(&client, None, false, &server.url());
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("no stable release found"));
+        mock.assert();
+    }
+
+    #[test]
+    fn resolve_version_prerelease_missing_tag_name() {
         let mut server = mockito::Server::new();
         let mock = server
             .mock("GET", "/repos/centy-io/centy-daemon/releases")
@@ -318,7 +498,7 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
             .create();
 
         let client = Client::new();
-        let result = resolve_version_from(&client, None, &server.url());
+        let result = resolve_version_from(&client, None, true, &server.url());
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("no releases found"));
         mock.assert();
@@ -326,11 +506,32 @@ def456  centy-daemon-0.1.0-x86_64-unknown-linux-gnu.tar.gz
 
     #[test]
     fn resolve_version_from_with_version_ignores_api_base() {
-        // When a version is provided, the API base is never used
         let client = Client::new();
-        let tag =
-            resolve_version_from(&client, Some("2.0.0"), "http://invalid-url.example.com")
+        let info =
+            resolve_version_from(&client, Some("2.0.0"), false, "http://invalid-url.example.com")
                 .unwrap();
-        assert_eq!(tag, "v2.0.0");
+        assert_eq!(info.tag, "v2.0.0");
+    }
+
+    #[test]
+    fn resolve_version_prerelease_notice_skipped_on_api_failure() {
+        let mut server = mockito::Server::new();
+        let latest_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases/latest")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"tag_name": "v0.4.0"}"#)
+            .create();
+        let releases_mock = server
+            .mock("GET", "/repos/centy-io/centy-daemon/releases")
+            .with_status(500)
+            .create();
+
+        let client = Client::new();
+        let info = resolve_version_from(&client, None, false, &server.url()).unwrap();
+        assert_eq!(info.tag, "v0.4.0");
+        assert!(info.notice.is_none());
+        latest_mock.assert();
+        releases_mock.assert();
     }
 }

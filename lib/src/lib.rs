@@ -38,17 +38,22 @@ pub(crate) fn extract_binary(
 
 /// Download and install the `centy-daemon` binary.
 ///
-/// If `version` is `None`, the latest release (including pre-releases) is used.
+/// If `version` is `None`, the latest stable release is used by default.
+/// Set `prerelease` to `true` to allow installing pre-release versions.
 /// Returns the path to the installed binary (`~/.centy/bin/centy-daemon`).
-pub fn install(version: Option<&str>) -> Result<PathBuf, InstallerError> {
+pub fn install(version: Option<&str>, prerelease: bool) -> Result<PathBuf, InstallerError> {
     let platform = platform::detect().map_err(InstallerError::Platform)?;
 
     let client = reqwest::blocking::Client::new();
 
-    let tag = github::resolve_version(&client, version)
+    let version_info = github::resolve_version(&client, version, prerelease)
         .map_err(InstallerError::VersionResolution)?;
 
-    let info = github::release_info(&tag, &platform);
+    if let Some(notice) = &version_info.notice {
+        eprintln!("{notice}");
+    }
+
+    let info = github::release_info(&version_info.tag, &platform);
 
     let asset = download::download_and_verify(&client, &info)
         .map_err(InstallerError::Download)?;

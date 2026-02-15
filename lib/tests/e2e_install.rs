@@ -35,7 +35,7 @@ fn install_pinned_version() {
     cleanup();
 
     let path =
-        centy_installer::install(Some("v0.1.6")).expect("install v0.1.6 should succeed");
+        centy_installer::install(Some("v0.1.6"), false).expect("install v0.1.6 should succeed");
 
     assert!(path.exists(), "binary should exist at {}", path.display());
 
@@ -58,7 +58,7 @@ fn install_pinned_version() {
 fn install_latest_version() {
     cleanup();
 
-    let path = centy_installer::install(None).expect("install latest should succeed");
+    let path = centy_installer::install(None, false).expect("install latest should succeed");
 
     assert!(path.exists(), "binary should exist at {}", path.display());
 }
@@ -67,7 +67,7 @@ fn install_latest_version() {
 fn install_version_without_v_prefix() {
     cleanup();
 
-    let path = centy_installer::install(Some("0.1.6"))
+    let path = centy_installer::install(Some("0.1.6"), false)
         .expect("install without v prefix should succeed");
 
     assert!(path.exists(), "binary should exist at {}", path.display());
@@ -77,7 +77,7 @@ fn install_version_without_v_prefix() {
 fn install_nonexistent_version_fails() {
     cleanup();
 
-    let result = centy_installer::install(Some("v99.99.99"));
+    let result = centy_installer::install(Some("v99.99.99"), false);
 
     assert!(
         result.is_err(),
