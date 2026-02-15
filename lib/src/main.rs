@@ -1,7 +1,9 @@
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
-    match centy_installer::install(None) {
+    let prerelease = std::env::args().any(|a| a == "--pre");
+
+    match centy_installer::install(None, prerelease) {
         Ok(path) => {
             println!("{}", path.display());
             ExitCode::SUCCESS

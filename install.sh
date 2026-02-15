@@ -9,7 +9,15 @@ main() {
     detect_arch
     target="${ARCH}-${OS}"
 
-    version="${1:-}"
+    pre_flag=""
+    version=""
+    for arg in "$@"; do
+        case "$arg" in
+            --pre) pre_flag="--pre" ;;
+            *) version="$arg" ;;
+        esac
+    done
+
     if [ -z "$version" ]; then
         version=$(fetch_latest_version)
     fi
@@ -36,7 +44,11 @@ main() {
     fi
 
     chmod +x "$binary"
-    "$binary"
+    if [ -n "$pre_flag" ]; then
+        "$binary" "$pre_flag"
+    else
+        "$binary"
+    fi
 }
 
 detect_os() {
