@@ -1,3 +1,4 @@
+mod daemon;
 mod download;
 mod extract;
 mod github;
@@ -22,6 +23,9 @@ pub enum InstallerError {
 
     #[error("installation failed: {0}")]
     Installation(String),
+
+    #[error("daemon restart failed: {0}")]
+    DaemonRestart(String),
 }
 
 pub(crate) fn extract_binary(
@@ -40,8 +44,13 @@ pub(crate) fn extract_binary(
 ///
 /// If `version` is `None`, the latest stable release is used by default.
 /// Set `prerelease` to `true` to allow installing pre-release versions.
+/// When `restart` is `true`, the daemon is restarted if it was already running.
 /// Returns the path to the installed binary (`~/.centy/bin/centy-daemon`).
-pub fn install(version: Option<&str>, prerelease: bool) -> Result<PathBuf, InstallerError> {
+pub fn install(
+    version: Option<&str>,
+    prerelease: bool,
+    restart: bool,
+) -> Result<PathBuf, InstallerError> {
     let platform = platform::detect().map_err(InstallerError::Platform)?;
 
     let client = reqwest::blocking::Client::new();
@@ -62,6 +71,18 @@ pub fn install(version: Option<&str>, prerelease: bool) -> Result<PathBuf, Insta
 
     let path = install::install_binary(&binary_bytes)
         .map_err(InstallerError::Installation)?;
+
+    if restart {
+        match daemon::restart_if_running(&path) {
+            Ok(true) => {
+                eprintln!("Restarted centy-daemon to use the updated version");
+            }
+            Ok(false) => {}
+            Err(e) => {
+                eprintln!("Warning: {e}");
+            }
+        }
+    }
 
     Ok(path)
 }
@@ -104,6 +125,15 @@ mod tests {
         assert_eq!(
             err.to_string(),
             "installation failed: permission denied"
+        );
+    }
+
+    #[test]
+    fn error_display_daemon_restart() {
+        let err = InstallerError::DaemonRestart("process not found".to_string());
+        assert_eq!(
+            err.to_string(),
+            "daemon restart failed: process not found"
         );
     }
 

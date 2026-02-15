@@ -10,10 +10,12 @@ main() {
     target="${ARCH}-${OS}"
 
     pre_flag=""
+    no_restart_flag=""
     version=""
     for arg in "$@"; do
         case "$arg" in
             --pre) pre_flag="--pre" ;;
+            --no-restart) no_restart_flag="--no-restart" ;;
             *) version="$arg" ;;
         esac
     done
@@ -44,11 +46,7 @@ main() {
     fi
 
     chmod +x "$binary"
-    if [ -n "$pre_flag" ]; then
-        "$binary" "$pre_flag"
-    else
-        "$binary"
-    fi
+    "$binary" $pre_flag $no_restart_flag
 }
 
 detect_os() {
