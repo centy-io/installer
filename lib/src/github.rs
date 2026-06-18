@@ -76,8 +76,9 @@ pub fn resolve_version_from(
     let body: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| format!("failed to parse release JSON: {e}"))?;
 
-    let tag = body["tag_name"]
-        .as_str()
+    let tag = body
+        .get("tag_name")
+        .and_then(serde_json::Value::as_str)
         .ok_or("no stable release found")?
         .to_string();
 
@@ -162,11 +163,9 @@ pub fn release_info(tag: &str, platform: &Platform) -> ReleaseInfo {
 pub fn parse_checksum(checksums_text: &str, asset_name: &str) -> Result<String, String> {
     for line in checksums_text.lines() {
         // Format: "<hash>  <filename>" or "<hash> <filename>"
-        let parts: Vec<&str> = line.splitn(2, char::is_whitespace).collect();
-        if parts.len() == 2 {
-            let filename = parts[1].trim();
-            if filename == asset_name {
-                return Ok(parts[0].to_string());
+        if let Some((hash, filename)) = line.split_once(char::is_whitespace) {
+            if filename.trim() == asset_name {
+                return Ok(hash.to_string());
             }
         }
     }
