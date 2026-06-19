@@ -37,6 +37,10 @@ unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
 unreachable = "deny"
+# Forbid direct indexing/slicing (`a[i]`, `a[i..j]`) which panics out of bounds.
+# Completes the no-panic family above by closing the remaining common panic
+# source; prefer `.get(i)` / `.get(i..j)` so malformed input is handled, not fatal.
+indexing_slicing = "deny"
 # Allow pedantic lints that are too noisy for this codebase
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
