@@ -5,7 +5,12 @@
 //!
 //! Run with: `cargo test --test e2e_install -- --test-threads=1`
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "tests use unwrap/expect/panic for brevity; only production code must stay panic-free"
+)]
 
 use std::fs;
 use std::path::PathBuf;

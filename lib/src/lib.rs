@@ -88,7 +88,12 @@ pub fn install(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "tests use unwrap/expect/panic for brevity; only production code must stay panic-free"
+)]
 mod tests {
     use super::*;
 
