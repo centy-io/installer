@@ -48,7 +48,8 @@ pub fn download_and_verify(client: &Client, info: &ReleaseInfo) -> Result<Downlo
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::panic,
-    clippy::significant_drop_tightening
+    clippy::significant_drop_tightening,
+    reason = "tests deliberately unwrap/panic to fail fast on broken fixtures"
 )]
 mod tests {
     use super::*;

@@ -60,7 +60,12 @@ pub fn extract_zip(archive_bytes: &[u8]) -> Result<Vec<u8>, String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "tests deliberately unwrap/panic to fail fast on broken fixtures"
+)]
 mod tests {
     use super::*;
     use std::io::Write;
