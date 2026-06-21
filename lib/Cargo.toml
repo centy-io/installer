@@ -46,6 +46,10 @@ indexing_slicing = "deny"
 # justified in-place; this keeps them auditable and prevents stale or
 # copy-pasted allows from accumulating unexplained.
 allow_attributes_without_reason = "deny"
+# Forbid string slicing (`&s[i..j]`) which panics when a bound falls inside a
+# UTF-8 multi-byte char. `indexing_slicing` covers arrays/slices/`Vec`, not `str`;
+# this closes that remaining panic gap. Prefer `.get(i..j)` for fallible slicing.
+string_slice = "deny"
 # Allow pedantic lints that are too noisy for this codebase
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
