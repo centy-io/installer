@@ -12,7 +12,10 @@ pub struct VersionInfo {
 
 pub struct ReleaseInfo {
     /// Retained for consumers that need the resolved tag (e.g. for display/logging).
-    #[allow(dead_code)]
+    #[allow(
+        dead_code,
+        reason = "retained for consumers that need the resolved tag (e.g. for display/logging)"
+    )]
     pub tag: String,
     pub asset_url: String,
     pub checksums_url: String,
@@ -179,7 +182,8 @@ pub fn parse_checksum(checksums_text: &str, asset_name: &str) -> Result<String, 
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::panic,
-    clippy::significant_drop_tightening
+    clippy::significant_drop_tightening,
+    reason = "tests deliberately unwrap/panic to fail fast on broken fixtures"
 )]
 mod tests {
     use super::*;

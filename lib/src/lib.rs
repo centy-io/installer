@@ -88,7 +88,12 @@ pub fn install(
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "tests deliberately unwrap/panic to fail fast on broken fixtures"
+)]
 mod tests {
     use super::*;
 

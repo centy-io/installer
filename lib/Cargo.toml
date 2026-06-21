@@ -37,6 +37,9 @@ unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
 unreachable = "deny"
+# Require every `#[allow(...)]` to record a `reason = "..."`, so each opt-out of
+# the panic-safety set above is self-documenting and auditable in review.
+allow_attributes_without_reason = "deny"
 # Forbid direct indexing/slicing (`a[i]`, `a[i..j]`) which panics out of bounds.
 # Completes the no-panic family above by closing the remaining common panic
 # source; prefer `.get(i)` / `.get(i..j)` so malformed input is handled, not fatal.

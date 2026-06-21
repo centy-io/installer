@@ -5,7 +5,12 @@
 //!
 //! Run with: `cargo test --test e2e_install -- --test-threads=1`
 
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "end-to-end tests deliberately unwrap/panic to fail fast on broken fixtures"
+)]
 
 use std::fs;
 use std::path::PathBuf;
