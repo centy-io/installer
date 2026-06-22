@@ -197,7 +197,12 @@ pub fn restart_if_running(binary_path: &Path) -> Result<bool, String> {
 }
 
 #[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+#[allow(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    reason = "tests use unwrap/expect/panic for brevity; only production code must stay panic-free"
+)]
 mod tests {
     use super::*;
 

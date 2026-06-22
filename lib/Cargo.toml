@@ -41,6 +41,11 @@ unreachable = "deny"
 # Completes the no-panic family above by closing the remaining common panic
 # source; prefer `.get(i)` / `.get(i..j)` so malformed input is handled, not fatal.
 indexing_slicing = "deny"
+# Require every `#[allow(...)]` to carry a `reason = "..."` explaining why the
+# lint is suppressed. Suppressions silence the linter, so each one should be
+# justified in-place; this keeps them auditable and prevents stale or
+# copy-pasted allows from accumulating unexplained.
+allow_attributes_without_reason = "deny"
 # Forbid string slicing (`&s[i..j]`) which panics when a bound falls inside a
 # UTF-8 multi-byte char. `indexing_slicing` covers arrays/slices/`Vec`, not `str`;
 # this closes that remaining panic gap. Prefer `.get(i..j)` for fallible slicing.
