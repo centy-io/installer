@@ -37,6 +37,10 @@ unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
 unreachable = "deny"
+# Forbid `unimplemented!()`, a deliberate panic for unfinished code paths.
+# Completes the no-panic family alongside `panic`/`unreachable`/`todo`; if a
+# path truly isn't supported, return a proper `Result` error instead.
+unimplemented = "deny"
 # Forbid direct indexing/slicing (`a[i]`, `a[i..j]`) which panics out of bounds.
 # Completes the no-panic family above by closing the remaining common panic
 # source; prefer `.get(i)` / `.get(i..j)` so malformed input is handled, not fatal.
