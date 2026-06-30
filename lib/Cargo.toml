@@ -50,6 +50,8 @@ allow_attributes_without_reason = "deny"
 # UTF-8 multi-byte char. `indexing_slicing` covers arrays/slices/`Vec`, not `str`;
 # this closes that remaining panic gap. Prefer `.get(i..j)` for fallible slicing.
 string_slice = "deny"
+# Reject leftover `dbg!` debugging macros so they never ship to production.
+dbg_macro = "deny"
 # Allow pedantic lints that are too noisy for this codebase
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
