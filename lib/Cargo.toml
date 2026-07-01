@@ -60,6 +60,12 @@ dbg_macro = "deny"
 # they ship accidentally. Closes the last common panic-causing macro not
 # already covered by the no-panic lints above.
 todo = "deny"
+# Forbid `.map_err(|_| ...)`, which discards the original error instead of
+# binding it. Network requests, checksum verification, and archive
+# extraction are all failure-prone here, and the underlying error is
+# exactly what a user or maintainer needs to debug a failed install;
+# require `.map_err(|e| ...)` so it can be logged, wrapped, or preserved.
+map_err_ignore = "deny"
 # Allow pedantic lints that are too noisy for this codebase
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
