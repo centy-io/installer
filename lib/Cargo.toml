@@ -52,6 +52,12 @@ allow_attributes_without_reason = "deny"
 string_slice = "deny"
 # Reject leftover `dbg!` debugging macros so they never ship to production.
 dbg_macro = "deny"
+# Forbid `.map_err(|_| ...)`, which discards the original error and its
+# context. Network, filesystem, and archive-extraction failures in an
+# installer need their root cause preserved for debugging; require binding
+# the error (`.map_err(|e| ...)`) so it can be logged or wrapped instead of
+# silently dropped.
+map_err_ignore = "deny"
 # Allow pedantic lints that are too noisy for this codebase
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
